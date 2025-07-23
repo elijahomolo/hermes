@@ -10,5 +10,5 @@ type User struct {
    Country string 
    Language string 
    Email string 
-   CreatedAt time.time
+   CreatedAt time.Time
 }
