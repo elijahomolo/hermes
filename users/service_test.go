@@ -40,11 +40,15 @@ func (m *MockRepository) Delete(id string) error {
 }
 
 func (m *MockRepository) Update(id string) (*User, error) {
-        if _, exists := m.users[id]; exists {
+         user, ok := m.users[id]
+         if !ok {
+              return nil, ErrUserNotFound
+            }
+         if _, exists := m.users[id]; exists {
                 return nil, errors.New("user already exists")
         }
         
-        return m.users[user.ID], nil
+        return user, nil
 }
 
 // Unit Tests
@@ -53,12 +57,12 @@ func TestCreateUser(t *testing.T) {
 	repo := NewMockRepository()
 	service := NewService(repo)
 
-	user, err := service.CreateUser("Alice", "Doe", "20060102150405", "USA", "alice@example.com")
+	user, err := service.CreateUser("Alice", "Doe", time.Now() , "USA", "alice@example.com")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if user.Name != "Alice" || user.Email != "alice@example.com" {
+	if user.FirstName != "Alice" || user.Email != "alice@example.com" {
 		t.Errorf("user fields not set correctly")
 	}
 
@@ -74,7 +78,7 @@ func TestGetUser(t *testing.T) {
 	// Create a user manually in the mock repo
 	user := &User{
 		ID:        "12345",
-		Name:      "Bob",
+		FirstName:      "Bob",
 		Email:     "bob@example.com",
 		CreatedAt: time.Now(),
 	}
@@ -86,8 +90,8 @@ func TestGetUser(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got.Name != "Bob" {
-		t.Errorf("expected name 'Bob', got %s", got.Name)
+	if got.FirstName != "Bob" {
+		t.Errorf("expected name 'Bob', got %s", got.FirstName)
 	}
 }
 
@@ -97,7 +101,7 @@ func TestDeleteUser(t *testing.T) {
 
 	user := &User{
 		ID:        "67890",
-		Name:      "Charlie",
+		FirstName:      "Charlie",
 		Email:     "charlie@example.com",
 		CreatedAt: time.Now(),
 	}

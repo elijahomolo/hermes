@@ -29,7 +29,7 @@ func (s *Service) GetUser(id string) (*User, error) {
 	return s.repo.GetByID(id)
 }
 
-func (s *Service) CreateUser(name, firstName string, lastName string, dateOfBirth time.Time, country string, email string) (*User, error) {
+func (s *Service) CreateUser(firstName string, lastName string, dateOfBirth time.Time, country string, email string) (*User, error) {
 	user := &User{
 		ID:        generateID(),
 		FirstName: firstName,
