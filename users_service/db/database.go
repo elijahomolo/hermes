@@ -2,14 +2,15 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
-	"github.com/elijahomolo/hermes/config"
+	"github.com/elijahomolo/hermes/users_service/config"
 	"github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func DBConn() (db *sql.DB, err error) {
+	godotenv.Load(".env")
 	cfg := mysql.Config{
 		User:                 config.GetDatabaseUser(),
 		Passwd:               config.GetDatabasePassword(),
@@ -24,11 +25,11 @@ func DBConn() (db *sql.DB, err error) {
 		log.Fatal(err)
 		return nil, err
 	}
-	defer db.Close()
-	if err = db.Ping(); err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-	fmt.Println("Successfully connected to MySQL!")
+
+	// if err = db.Ping(); err != nil {
+	// 	log.Fatal(err)
+	// 	return nil, err
+	// }
+	// fmt.Println("Successfully connected to MySQL!")
 	return db, nil
 }

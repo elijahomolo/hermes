@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"errors"
@@ -40,15 +40,15 @@ func (m *MockRepository) Delete(id string) error {
 }
 
 func (m *MockRepository) Update(id string) (*User, error) {
-         user, ok := m.users[id]
-         if !ok {
-              return nil, ErrUserNotFound
-            }
-         if _, exists := m.users[id]; exists {
-                return nil, errors.New("user already exists")
-        }
-        
-        return user, nil
+	user, ok := m.users[id]
+	if !ok {
+		return nil, ErrUserNotFound
+	}
+	if _, exists := m.users[id]; exists {
+		return nil, errors.New("user already exists")
+	}
+
+	return user, nil
 }
 
 // Unit Tests
@@ -57,7 +57,7 @@ func TestCreateUser(t *testing.T) {
 	repo := NewMockRepository()
 	service := NewService(repo)
 
-	user, err := service.CreateUser("Alice", "Doe", time.Now() , "USA", "alice@example.com")
+	user, err := service.CreateUser("Alice", "Doe", time.Now(), "USA", "alice@example.com")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestGetUser(t *testing.T) {
 	// Create a user manually in the mock repo
 	user := &User{
 		ID:        "12345",
-		FirstName:      "Bob",
+		FirstName: "Bob",
 		Email:     "bob@example.com",
 		CreatedAt: time.Now(),
 	}
@@ -101,7 +101,7 @@ func TestDeleteUser(t *testing.T) {
 
 	user := &User{
 		ID:        "67890",
-		FirstName:      "Charlie",
+		FirstName: "Charlie",
 		Email:     "charlie@example.com",
 		CreatedAt: time.Now(),
 	}
