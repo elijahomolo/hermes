@@ -27,6 +27,32 @@ type Service struct {
 	Repo Repository
 }
 
+func (s *Service) deleteUser(id string) error {
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "DELETE FROM Users WHERE ID = ?"
+	result, err := dbConn.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return ErrUserNotFound
+	}
+	log.Printf("User with ID %s deleted successfully", id)
+	return nil
+}
+
+// getUserByEmail retrieves a user by their email address.
+
 func (s *Service) getUserByEmail(email string) (*User, error) {
 	query := "SELECT * FROM Users WHERE Email = ?"
 	dbConn, err := db.DBConn()
@@ -96,7 +122,7 @@ func (s *Service) GetUserByEmail(email string) (*User, error) {
 }
 
 func (s *Service) DeleteUser(id string) error {
-	return s.Repo.Delete(id)
+	return s.deleteUser(id)
 }
 
 // add update user function
