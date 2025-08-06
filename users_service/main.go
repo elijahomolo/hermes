@@ -45,6 +45,31 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func GetUserByEmailHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Print("enter email to search for user: ")
+	var email string
+	fmt.Scan(&email)
+
+	if email == " " {
+		http.Error(w, "Email cannot be empty", http.StatusBadRequest)
+		return
+	}
+	// email := r.URL.Query().Get("email")
+	// if email == "" {
+	// 	http.Error(w, "Email is required", http.StatusBadRequest)
+	// 	return
+	// }
+
+	user, err := userService.GetUserByEmail(email)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error retrieving user: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf("User found: %v", user)))
+}
+
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Print("Enter your first name: ")
@@ -124,6 +149,7 @@ func main() {
 
 	router.HandleFunc("/login", LoginHandler)
 	router.HandleFunc("/create_user", CreateUserHandler)
+	router.HandleFunc("/get_user_by_email", GetUserByEmailHandler)
 	// router.HandleFunc("/users", userService.CreateUserHandler).Methods("POST")
 	// router.HandleFunc("/users/{id}", userService.GetUserHandler).Methods("GET")
 	// router.HandleFunc("/users/{id}", userService.UpdateUserHandler).Methods("PUT")

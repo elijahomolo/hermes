@@ -28,34 +28,24 @@ type Service struct {
 }
 
 func (s *Service) getUserByEmail(email string) (*User, error) {
-	query := "SELECT * FROM users WHERE email = ?"
-	db, err := db.DBConn()
+	query := "SELECT * FROM Users WHERE Email = ?"
+	dbConn, err := db.DBConn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	row := db.QueryRow(query, email)
+	defer dbConn.Close()
+
+	row := dbConn.QueryRow(query, email)
+	log.Print(row)
 	user := &User{}
-	err = row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.DateOfBirth, &user.Country, &user.Email, &user.CreatedAt)
+	err = row.Scan(&user.ID, &user.LastName, &user.FirstName, &user.DateOfBirth, &user.Country, &user.Language, &user.Email, &user.Password, &user.CreatedAt)
 	if err != nil {
-		log.Printf("Error querying user by email: %v", err)
 		if err == sql.ErrNoRows {
-			log.Printf("No user found with email: %s", email)
 			return nil, ErrUserNotFound
 		}
-		return nil, fmt.Errorf("failed to query user by email: %w", err)
+		return nil, fmt.Errorf("failed to scan user: %w", err)
 	}
-	// Return the user if found
-	if user.Email != email {
-		log.Printf("User with email %s not found", email)
-
-		return nil, fmt.Errorf("user with email %s not found", email)
-	}
-
-	defer db.Close()
-	log.Printf("User found: %v", user)
-
 	return user, nil
-
 }
 
 func NewService(r Repository) *Service {
