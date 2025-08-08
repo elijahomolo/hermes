@@ -21,6 +21,7 @@ type Repository interface {
 	Update(id string) (*User, error)
 	Login(email string) (*User, error)
 	GetUserByEmail(email string) (*User, error)
+	ListAllUsers() ([]*User, error)
 }
 
 type Service struct {
@@ -184,4 +185,48 @@ func (s *Service) updateUserByID(id string, firstName string, lastName string, d
 
 	log.Printf("User with ID %s updated successfully", id)
 	return user, nil
+}
+
+func (s *Service) ListAllUsers() ([]*User, error) {
+	users, err := s.listAllUsers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all users: %w", err)
+	}
+	return users, nil
+}
+
+// ListAllUsers retrieves all users from the database.
+func (s *Service) listAllUsers() ([]*User, error) {
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "SELECT * FROM Users"
+	rows, err := dbConn.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []*User
+	for rows.Next() {
+		user := &User{}
+		err = rows.Scan(&user.ID, &user.LastName, &user.FirstName, &user.DateOfBirth, &user.Country, &user.Language, &user.Email, &user.Password, &user.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over users: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	return users, nil
 }
