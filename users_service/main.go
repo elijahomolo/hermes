@@ -4,12 +4,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/elijahomolo/hermes/users_service/cmd"
 	"github.com/elijahomolo/hermes/users_service/users"
 
 	"github.com/gorilla/mux"
 )
 
 func main() {
+	cmd.Execute()
 	// Set up HTTP router
 	router := mux.NewRouter()
 

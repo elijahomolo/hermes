@@ -135,3 +135,53 @@ func generateID() string {
 func (s *Service) GenerateID() string {
 	return generateID()
 }
+
+func (s *Service) UpdateUser(id string) (*User, error) {
+	user, err := s.updateUserByID(id, "", "", "", "", "", "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+	return user, nil
+}
+
+// UpdateUser updates a user's information.
+func (s *Service) updateUserByID(id string, firstName string, lastName string, dateOfBirth string, country string, language string, email string) (*User, error) {
+	user, err := s.GetUser(id)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	if firstName != "" {
+		user.FirstName = firstName
+	}
+	if lastName != "" {
+		user.LastName = lastName
+	}
+	if dateOfBirth != "" {
+		user.DateOfBirth = dateOfBirth
+	}
+	if country != "" {
+		user.Country = country
+	}
+	if language != "" {
+		user.Language = language
+	}
+	if email != "" {
+		user.Email = email
+	}
+
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "UPDATE Users SET FirstName = ?, LastName = ?, DateOfBirth = ?, Country = ?, Language = ?, Email = ? WHERE ID = ?"
+	_, err = dbConn.Exec(query, user.FirstName, user.LastName, user.DateOfBirth, user.Country, user.Language, user.Email, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
+	}
+
+	log.Printf("User with ID %s updated successfully", id)
+	return user, nil
+}
