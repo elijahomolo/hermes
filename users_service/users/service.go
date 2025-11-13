@@ -28,6 +28,75 @@ type Service struct {
 	Repo Repository
 }
 
+func (s *Service) DeleteSuperUser(id int) error {
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "DELETE FROM superusers WHERE ID = ?"
+	result, err := dbConn.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete superadmin: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("superadmin not found")
+	}
+	log.Printf("Superadmin with ID %d deleted successfully", id)
+	return nil
+}
+
+func (s *Service) createSuperUser(SuperUser SuperUser) (*SuperUser, error) {
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "INSERT INTO superusers (FirstName, LastName, Email, Password) VALUES (?, ?, ?, ?)"
+	_, err = dbConn.Exec(query, SuperUser.FirstName, SuperUser.LastName, SuperUser.Email, SuperUser.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create superadmin: %w", err)
+	}
+
+	return &SuperUser, nil
+}
+
+func (s *Service) getSuperUserByUsernameOrEmail(email string) (*SuperUser, error) {
+	log.Printf("Searching for superadmin with email: %s", email)
+
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "SELECT ID, FirstName, LastName, Email, Password FROM superusers WHERE Email = ? LIMIT 1"
+
+	var superUser SuperUser
+	err = dbConn.QueryRow(query, email).Scan(
+		&superUser.ID,
+		&superUser.FirstName,
+		&superUser.LastName,
+		&superUser.Email,
+		&superUser.Password,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("superadmin not found")
+		}
+		return nil, fmt.Errorf("failed to query superadmin: %w", err)
+	}
+
+	return &superUser, nil
+}
+
 func (s *Service) deleteUser(id string) error {
 	dbConn, err := db.DBConn()
 	if err != nil {

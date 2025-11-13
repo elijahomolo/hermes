@@ -1,8 +1,13 @@
 package users
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -12,11 +17,172 @@ import (
 
 var email string
 var password string
+var userService *Service
+var authService *Auth
 
 // userService should be initialized properly, e.g. in an init function or via dependency injection
-var userService *Service
+
+func DeleteSuperUserHandler(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+
+	authService := &Auth{
+		Claims: &Claims{},
+	}
+	authService.Claims.token = tokenString
+
+	err := authService.ValidateJWT(tokenString)
+	if err != nil {
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %v", err)
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	defer r.Body.Close()
+
+	bodyString := string(bodyBytes)
+	fmt.Printf("Raw request body: %s\n", bodyString)
+
+	var supUser *SuperUser
+
+	err = json.Unmarshal(bodyBytes, &supUser)
+	if err != nil {
+		log.Printf("Error unmarshalling JSON: %v", err)
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+	// Proceed to delete the superuser using supUser.ID or other identifier
+
+	err = userService.DeleteSuperUser(supUser.ID)
+	if err != nil {
+		log.Printf("Error deleting superuser: %v", err)
+		http.Error(w, "Error deleting superuser", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Deleted SuperUser Handler"))
+
+}
+
+func SuperUserLoginHandler(w http.ResponseWriter, r *http.Request) {
+	var superUser SuperUser
+	auth := r.Header.Get("Authorization")
+	if auth == "" {
+		http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+		return
+	}
+
+	// Expected format: "Basic base64encodedstring"
+	parts := strings.SplitN(auth, " ", 2)
+	if len(parts) != 2 || parts[0] != "Basic" {
+		http.Error(w, "Invalid Authorization header format", http.StatusBadRequest)
+		return
+	}
+
+	payload, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		http.Error(w, "Invalid base64 token", http.StatusBadRequest)
+		return
+	}
+
+	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 {
+		http.Error(w, "Invalid auth payload", http.StatusBadRequest)
+		return
+	}
+
+	email := pair[0]
+	password := pair[1]
+
+	superUser.Email = email
+	superUser.Password = password
+
+	//Process the decoded data
+	foundSuperUser, err := userService.getSuperUserByUsernameOrEmail(email)
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "user does not exist", http.StatusUnauthorized)
+		return
+	}
+	isAuthenticated, err := authService.authenticateSuperUser(foundSuperUser, password)
+	if err != nil || !isAuthenticated {
+		log.Print(err)
+		http.Error(w, "authentication failed", http.StatusUnauthorized)
+		return
+	}
+
+	token, err := authService.generateJWT(fmt.Sprintf("%d", foundSuperUser.ID))
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "failed to generate token", http.StatusInternalServerError)
+		return
+	}
+
+	// Return the JWT token in the response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"token":"%s","expires_at":"%s"}`, token, time.Now().Add(24*time.Hour).Format(time.RFC3339))))
+
+	// //Send a JSON response (example)
+	// w.WriteHeader(http.StatusOK)
+	// w.Header().Set("Content-Type", "application/json")
+	//json.NewEncoder(w).Encode(map[string]bool{"success": true})
+
+	w.Write([]byte("Login successful"))
+}
+
+func CreateSuperUserHandler(w http.ResponseWriter, r *http.Request) {
+	tokenString := r.Header.Get("Authorization")
+
+	authService := &Auth{
+		Claims: &Claims{},
+	}
+	authService.Claims.token = tokenString
+
+	err := authService.ValidateJWT(tokenString)
+	if err != nil {
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %v", err)
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	defer r.Body.Close()
+
+	bodyString := string(bodyBytes)
+	fmt.Printf("Raw request body: %s\n", bodyString)
+
+	var supUser *SuperUser
+
+	err = json.Unmarshal(bodyBytes, &supUser)
+	if err != nil {
+		log.Printf("Error unmarshalling JSON: %v", err)
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+
+	supUser, err = userService.createSuperUser(*supUser)
+	if err != nil {
+		log.Printf("Error creating superuser: %v", err)
+		http.Error(w, "Error creating superuser", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Created SuperUser Handler"))
+}
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("received login request")
 	// TODO: Implement login logic
 	// takes input value for name
 	fmt.Print("Enter your name: ")

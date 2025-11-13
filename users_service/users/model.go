@@ -11,3 +11,11 @@ type User struct {
 	Email       string `json:"email"`
 	CreatedAt   string `json:"created_at"`
 }
+
+type SuperUser struct {
+	ID        int    `json:"id"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Password  string `json:"password"`
+	Email     string `json:"email"`
+}

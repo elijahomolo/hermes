@@ -17,10 +17,13 @@ func main() {
 
 	// Define a simple login handler
 
-	router.HandleFunc("/login", users.LoginHandler)
-	router.HandleFunc("/create_user", users.CreateUserHandler)
-	router.HandleFunc("/get_user_by_email", users.GetUserByEmailHandler)
-	router.HandleFunc("/delete_user/{id}", users.DeleteUserHandler)
+	router.HandleFunc("/login", users.LoginHandler).Methods("POST")
+	router.HandleFunc("/create_user", users.CreateUserHandler).Methods("POST")
+	router.HandleFunc("/get_user_by_email", users.GetUserByEmailHandler).Methods("POST")
+	router.HandleFunc("/delete_user/{id}", users.DeleteUserHandler).Methods("DELETE")
+	router.HandleFunc("/superadmin/login", users.SuperUserLoginHandler).Methods("POST")
+	router.HandleFunc("/superadmin/create", users.CreateSuperUserHandler).Methods("POST")
+	router.HandleFunc("/superadmin/delete", users.DeleteSuperUserHandler).Methods("POST")
 	// router.HandleFunc("/users", userService.CreateUserHandler).Methods("POST")
 	// router.HandleFunc("/users/{id}", userService.GetUserHandler).Methods("GET")
 	// router.HandleFunc("/users/{id}", userService.UpdateUserHandler).Methods("PUT")
