@@ -22,6 +22,53 @@ var authService *Auth
 
 // userService should be initialized properly, e.g. in an init function or via dependency injection
 
+func UpdateSuperUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Update SuperUser Handler"))
+	tokenString := r.Header.Get("Authorization")
+
+	authService := &Auth{
+		Claims: &Claims{},
+	}
+	authService.Claims.token = tokenString
+
+	err := authService.ValidateJWT(tokenString)
+	if err != nil {
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %v", err)
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	defer r.Body.Close()
+
+	bodyString := string(bodyBytes)
+	fmt.Printf("Raw request body: %s\n", bodyString)
+
+	var supUser *SuperUser
+
+	err = json.Unmarshal(bodyBytes, &supUser)
+	if err != nil {
+		log.Printf("Error unmarshalling JSON: %v", err)
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+	// Proceed to update the superuser using supUser.ID or other identifier
+
+	_, err = userService.UpdateSuperUser(supUser.ID, supUser.FirstName, supUser.LastName, supUser.Email, supUser.Password)
+	if err != nil {
+		log.Printf("Error updating superuser: %v", err)
+		http.Error(w, "Error updating superuser", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Updated SuperUser Handler"))
+}
+
 func DeleteSuperUserHandler(w http.ResponseWriter, r *http.Request) {
 	tokenString := r.Header.Get("Authorization")
 

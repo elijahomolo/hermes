@@ -28,6 +28,41 @@ type Service struct {
 	Repo Repository
 }
 
+func (s *Service) UpdateSuperUser(id int, firstName string, lastName string, email string, password string) (*SuperUser, error) {
+	superUser, err := s.getSuperUserByUsernameOrEmail(email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get superadmin: %w", err)
+	}
+
+	if firstName != "" {
+		superUser.FirstName = firstName
+	}
+	if lastName != "" {
+		superUser.LastName = lastName
+	}
+	if email != "" {
+		superUser.Email = email
+	}
+	if password != "" {
+		superUser.Password = password
+	}
+
+	dbConn, err := db.DBConn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer dbConn.Close()
+
+	query := "UPDATE superusers SET FirstName = ?, LastName = ?, Email = ?, Password = ? WHERE ID = ?"
+	_, err = dbConn.Exec(query, superUser.FirstName, superUser.LastName, superUser.Email, superUser.Password, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update superadmin: %w", err)
+	}
+
+	log.Printf("Superadmin with ID %d updated successfully", id)
+	return superUser, nil
+}
+
 func (s *Service) DeleteSuperUser(id int) error {
 	dbConn, err := db.DBConn()
 	if err != nil {

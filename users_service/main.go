@@ -24,6 +24,7 @@ func main() {
 	router.HandleFunc("/superadmin/login", users.SuperUserLoginHandler).Methods("POST")
 	router.HandleFunc("/superadmin/create", users.CreateSuperUserHandler).Methods("POST")
 	router.HandleFunc("/superadmin/delete", users.DeleteSuperUserHandler).Methods("POST")
+	router.HandleFunc("/superadmin/update", users.UpdateSuperUserHandler).Methods("POST")
 	// router.HandleFunc("/users", userService.CreateUserHandler).Methods("POST")
 	// router.HandleFunc("/users/{id}", userService.GetUserHandler).Methods("GET")
 	// router.HandleFunc("/users/{id}", userService.UpdateUserHandler).Methods("PUT")
